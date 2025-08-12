@@ -10,10 +10,11 @@ interface ChatStreamQuery {
   conversationId: string;
   message: string;
   userData: string;
+  lang?: string;
 }
 
 router.get('/stream', async (req: Request, res: Response) => {
-  const { conversationId, message, userData } = req.query;
+  const { conversationId, message, userData, lang } = req.query as unknown as ChatStreamQuery;
 
   // Validate query parameters
   if (!conversationId || !message || !userData) {
@@ -25,7 +26,7 @@ router.get('/stream', async (req: Request, res: Response) => {
     const decodedMessage = decodeURIComponent(message as string);
     const decodedUserData = decodeURIComponent(userData as string);
 
-    await chatStream(req, res, openai, conversationId as string, decodedMessage, decodedUserData);
+    await chatStream(req, res, openai, conversationId as string, decodedMessage, decodedUserData, lang);
   } catch (error) {
     console.error('Error initiating chat stream:', error);
     res.status(500).json({ error: 'Failed to initiate chat stream' });

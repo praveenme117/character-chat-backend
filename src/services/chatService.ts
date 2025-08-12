@@ -20,7 +20,8 @@ export async function chatStream(
   openai: OpenAI,
   conversationId: string,
   message: string,
-  userData: string
+  userData: string,
+  lang?: string
 ): Promise<void> {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -65,7 +66,7 @@ export async function chatStream(
       messages: [
         {
           role: 'system',
-          content: `You are an AI avatar living within a person's phone, acting as a confidante and personal assistant. Be warm, friendly, empathetic, and engaging. Adapt to the user's language (English or Japanese). Respect privacy, avoid unethical actions, and provide clear, concise help. User's details: ${userData}.`,
+          content: `You are an AI avatar living within a person's phone, acting as a confidante and personal assistant. Be warm, friendly, empathetic, and engaging. Reply strictly in the user's selected language which is: ${lang || 'en'}. If 'ja', write natural Japanese. If 'en', write natural English. Respect privacy, avoid unethical actions, and provide clear, concise help. User's details: ${userData}.`,
         },
         ...messageHistory,
         { role: 'user', content: message },
