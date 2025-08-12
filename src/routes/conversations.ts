@@ -4,34 +4,18 @@ import { PrismaClient } from '@prisma/client';
 const router = express.Router();
 const prisma = new PrismaClient();
 
-router.post('/', async (req, res) => {
-  const { avatarId } = req.body;
-  try {
-    const conversation = await prisma.conversation.create({
-      data: {
-        avatarId,
-        userId: 'temp-user-id',
-        messages: { create: [] },
-      },
-      select: { id: true },
-    });
-    res.json({ conversationId: conversation.id });
-  } catch (error) {
-    console.error('Error creating conversation:', error);
-    res.status(500).json({ error: 'Failed to create conversation' });
-  }
-});
+// Removed: Use /api/session instead to properly create conversations with valid user IDs
 
 router.get('/:id', async (req, res) => {
   try {
     const conversation = await prisma.conversation.findUnique({
       where: { id: req.params.id },
-      include: { avatar: true, messages: { take: 50, orderBy: { timestamp: 'desc' } } },
+      include: { avatar: true, messages: { take: 50, orderBy: { timestamp: 'asc' } } },
     });
     if (!conversation) return res.status(404).json({ error: 'Conversation not found' });
     res.json({
       avatar: conversation.avatar,
-      messages: conversation.messages.map((m) => ({
+      messages: conversation.messages.map((m: any) => ({
         id: m.id,
         role: m.userMessage ? 'user' : 'assistant',
         content: m.userMessage || m.aiResponse || '',

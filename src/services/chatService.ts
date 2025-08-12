@@ -46,14 +46,14 @@ export async function chatStream(
   try {
     const conversation = await prisma.conversation.findUnique({
       where: { id: conversationId },
-      include: { messages: { take: 10, orderBy: { timestamp: 'asc' } } },
+      include: { messages: { take: 50, orderBy: { timestamp: 'asc' } } },
     });
     if (!conversation) {
       res.write(`event: error\ndata: ${JSON.stringify({ error: 'Conversation not found' })}\n\n`);
       return;
     }
 
-    const messageHistory = conversation.messages.map((msg) => ({
+    const messageHistory = conversation.messages.map((msg: any) => ({
       role: (msg.userMessage ? 'user' : 'assistant') as 'user' | 'assistant',
       content: msg.userMessage || msg.aiResponse || '',
     }));

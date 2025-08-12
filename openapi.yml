@@ -46,18 +46,27 @@ openapi: 3.0.3
                    messages: { type: array, items: { type: object } }
          responses:
            '200': { description: Messages updated }
-     /api/chat:
-       post:
-         summary: Stream chat response
-         requestBody:
-           content:
-             application/json:
-               schema:
-                 type: object
-                 properties:
-                   conversationId: { type: string }
-                   messages: { type: array, items: { type: object } }
-                   userData: { type: object }
+     /api/chat/stream:
+       get:
+         summary: Stream chat response via Server-Sent Events
+         parameters:
+           - name: conversationId
+             in: query
+             required: true
+             schema: { type: string }
+           - name: message
+             in: query
+             required: true
+             schema: { type: string }
+           - name: userData
+             in: query
+             required: true
+             schema: { type: string }
          responses:
-           '200': { description: Streams text/plain response }
+           '200': 
+             description: Streams Server-Sent Events with token, done, error, and ping events
+             content:
+               text/event-stream:
+                 schema:
+                   type: string
            

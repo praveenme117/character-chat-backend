@@ -1,14 +1,15 @@
 import { PrismaClient } from '@prisma/client';
+import crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
 async function main() {
   const avatar = await prisma.avatar.create({
     data: {
-      staticUrl: '/avatars/static.mp4',
-      listeningUrl: '/avatars/listening.mp4',
-      speakingUrl: '/avatars/speaking.mp4',
-      tapUrl: '/avatars/tap.mp4',
+      staticUrl: '/images/still.gif',
+      listeningUrl: '/images/listening.gif',
+      speakingUrl: '/images/speaking.gif',
+      tapUrl: '/images/start.gif',
     },
   });
 
