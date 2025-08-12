@@ -1,0 +1,63 @@
+openapi: 3.0.3
+   info:
+     title: Avatar Chat Backend API
+     version: 1.0.0
+   paths:
+     /:
+       get:
+         summary: Check backend status
+         responses:
+           '200': { description: Returns server status }
+     /api/conversations:
+       post:
+         summary: Create a new conversation
+         requestBody:
+           content:
+             application/json:
+               schema:
+                 type: object
+                 properties:
+                   avatarId: { type: integer }
+         responses:
+           '200': { description: Conversation created, returns { conversationId: string } }
+     /api/conversations/{id}:
+       get:
+         summary: Get conversation details
+         parameters:
+           - name: id
+             in: path
+             required: true
+             schema: { type: string }
+         responses:
+           '200': { description: Returns conversation with avatar and messages }
+       post:
+         summary: Update conversation messages
+         parameters:
+           - name: id
+             in: path
+             required: true
+             schema: { type: string }
+         requestBody:
+           content:
+             application/json:
+               schema:
+                 type: object
+                 properties:
+                   messages: { type: array, items: { type: object } }
+         responses:
+           '200': { description: Messages updated }
+     /api/chat:
+       post:
+         summary: Stream chat response
+         requestBody:
+           content:
+             application/json:
+               schema:
+                 type: object
+                 properties:
+                   conversationId: { type: string }
+                   messages: { type: array, items: { type: object } }
+                   userData: { type: object }
+         responses:
+           '200': { description: Streams text/plain response }
+           
