@@ -16,12 +16,15 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'Missing required fields: avatarId and userData with name' });
   }
   
+  // Ensure userData has proper structure
+  const userInfo = {
+    name: userData.name || 'User',
+    city: userData.city || 'Unknown'
+  };
+  
   try {
-    // Ensure userData has proper structure
-    const userInfo = {
-      name: userData.name || 'User',
-      city: userData.city || 'Unknown'
-    };
+    // Check if database is available
+    await prisma.$connect();
     
     let user = await prisma.user.findFirst({ where: { name: userInfo.name } });
     if (!user) {
@@ -41,9 +44,21 @@ router.post('/', async (req, res) => {
     
     console.log('Successfully created conversation:', conversation.id, 'for user:', userInfo.name);
     res.json({ sessionId: conversation.id, userData: userInfo });
-  } catch (error) {
-    console.error('Error creating session:', error);
-    res.status(500).json({ error: 'Failed to create session' });
+    
+  } catch (error: any) {
+    console.error('Database error creating session:', error.message || error);
+    
+    // If database fails, create a temporary session ID for the frontend
+    const tempSessionId = crypto.randomUUID();
+    console.log('Created temporary session ID:', tempSessionId);
+    
+    res.json({ 
+      sessionId: tempSessionId, 
+      userData: userInfo,
+      temporary: true 
+    });
+  } finally {
+    await prisma.$disconnect().catch(() => {});
   }
 });
 
