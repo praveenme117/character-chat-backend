@@ -7,20 +7,60 @@ const prisma = new PrismaClient();
 // Removed: Use /api/session instead to properly create conversations with valid user IDs
 
 router.get('/:id', async (req, res) => {
+  console.log('Fetching conversation:', req.params.id);
   try {
     const conversation = await prisma.conversation.findUnique({
       where: { id: req.params.id },
-      include: { avatar: true, messages: { take: 50, orderBy: { timestamp: 'asc' } } },
+      include: { 
+        messages: { 
+          take: 50, 
+          orderBy: { timestamp: 'asc' } 
+        } 
+      },
     });
-    if (!conversation) return res.status(404).json({ error: 'Conversation not found' });
-    res.json({
-      avatar: conversation.avatar,
-      messages: conversation.messages.map((m: any) => ({
-        id: m.id,
-        role: m.userMessage ? 'user' : 'assistant',
-        content: m.userMessage || m.aiResponse || '',
-      })),
+    
+    if (!conversation) {
+      console.log('Conversation not found:', req.params.id);
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
+
+    // Get avatar data separately or use default
+    let avatar;
+    try {
+      const avatarData = await prisma.avatar.findUnique({
+        where: { id: conversation.avatarId }
+      });
+      avatar = avatarData || {
+        id: 1,
+        staticUrl: "/images/still.gif",
+        listeningUrl: "/images/listening.gif",
+        speakingUrl: "/images/speaking.gif",
+        tapUrl: "/images/start.gif",
+      };
+    } catch (avatarError) {
+      console.warn('Avatar not found, using default:', avatarError);
+      avatar = {
+        id: 1,
+        staticUrl: "/images/still.gif",
+        listeningUrl: "/images/listening.gif",
+        speakingUrl: "/images/speaking.gif",
+        tapUrl: "/images/start.gif",
+      };
+    }
+
+    const messages = conversation.messages.map((m: any) => ({
+      id: m.id,
+      role: m.userMessage ? 'user' : 'assistant',
+      content: m.userMessage || m.aiResponse || '',
+    }));
+
+    console.log('Conversation loaded:', {
+      id: conversation.id,
+      avatarId: conversation.avatarId,
+      messageCount: messages.length
     });
+
+    res.json({ avatar, messages });
   } catch (error) {
     console.error('Error fetching conversation:', error);
     res.status(500).json({ error: 'Failed to get conversation' });
