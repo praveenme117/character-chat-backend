@@ -1,9 +1,9 @@
-import { PrismaClient } from '@prisma/client';
 import crypto from 'crypto';
 import { Request, Response } from 'express';
 import { OpenAI } from 'openai';
+import { logger } from '../lib/logger';
+import { prisma } from '../lib/prisma';
 
-const prisma = new PrismaClient();
 const clients: { [conversationId: string]: Response[] } = {};
 
 interface MessageData {
@@ -32,13 +32,13 @@ export async function chatStream(
     clients[conversationId] = [];
   }
   clients[conversationId].push(res);
-  console.log(`Client connected for conversation ${conversationId}. Total clients: ${clients[conversationId].length}`);
+  logger.info('Client connected', { conversationId, totalClients: clients[conversationId].length });
 
   const heartbeat = setInterval(() => {
     try {
       res.write('event: ping\ndata: {}\n\n');
     } catch (error) {
-      console.error(`Heartbeat error for conversation ${conversationId}:`, error);
+      logger.error('Heartbeat error for conversation', { conversationId, error });
     }
   }, 15000);
 
@@ -59,8 +59,7 @@ export async function chatStream(
       content: msg.userMessage || msg.aiResponse || '',
     }));
 
-    console.log('OpenAI API Key:', process.env.OPENAI_API_KEY ? 'Set' : 'Missing');
-    console.log(`Sending OpenAI request for conversation ${conversationId}`);
+    logger.info('Sending OpenAI request', { conversationId });
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
@@ -81,7 +80,7 @@ export async function chatStream(
       try {
         res.write(`event: token\ndata: ${JSON.stringify({ content })}\n\n`);
       } catch (error) {
-        console.error(`Error sending token for conversation ${conversationId}:`, error);
+        logger.error('Error sending token', { conversationId, error });
         res.write(`event: error\ndata: ${JSON.stringify({ error: 'Failed to send token' })}\n\n`);
         break;
       }
@@ -101,10 +100,10 @@ export async function chatStream(
       await prisma.message.create({
         data: messageData,
       });
-      console.log(`Message saved for conversation ${conversationId}:`, messageData);
+      logger.info('Message saved', { conversationId, messageId: messageData.id });
     }
   } catch (error: any) {
-    console.error(`Stream error for conversation ${conversationId}:`, error.message || error);
+    logger.error('Stream error', { conversationId, error: error?.message || error });
     let errorMessage = 'Stream error: Unknown error';
     if (error.response) {
       errorMessage = `OpenAI error: ${error.response.status} - ${error.response.data?.error?.message || 'Unknown'}`;
@@ -117,7 +116,7 @@ export async function chatStream(
     clients[conversationId] = clients[conversationId].filter((client) => client !== res);
     if (clients[conversationId].length === 0) {
       delete clients[conversationId];
-      console.log(`All clients disconnected for conversation ${conversationId}`);
+      logger.info('All clients disconnected', { conversationId });
     }
     res.end();
   }
