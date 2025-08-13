@@ -33,7 +33,7 @@ Setup
 4. Start
    npm run dev
 
-API Endpoints (behavior unchanged)
+API Endpoints
 
 - GET /
   - Health/status
