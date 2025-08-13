@@ -40,11 +40,16 @@ router.get('/:id', async (req, res) => {
       return res.json(defaultResponse);
     }
 
-    const messages = conversation.messages.map((m: any) => ({
-      id: m.id,
-      role: m.userMessage ? 'user' : 'assistant',
-      content: m.userMessage || m.aiResponse || '',
-    }));
+    // Expand each DB row into separate user and assistant messages (preserve order by timestamp)
+    const messages: { id: string; role: 'user' | 'assistant'; content: string }[] = [];
+    for (const m of conversation.messages) {
+      if (m.userMessage) {
+        messages.push({ id: `${m.id}-u`, role: 'user', content: m.userMessage });
+      }
+      if (m.aiResponse) {
+        messages.push({ id: `${m.id}-a`, role: 'assistant', content: m.aiResponse });
+      }
+    }
 
     console.log('Conversation loaded:', {
       id: conversation.id,
@@ -52,13 +57,20 @@ router.get('/:id', async (req, res) => {
       messageCount: messages.length
     });
 
+    // Get the actual avatar for this conversation
+    const avatar = await prisma.avatar.findUnique({
+      where: { id: conversation.avatarId }
+    });
+
     res.json({
-      avatar: defaultResponse.avatar,
+      avatar: avatar || defaultResponse.avatar,
       messages: messages
     });
     
   } catch (error: any) {
     console.error('Database error, returning defaults:', error.message || error);
+    console.error('Full error:', error);
+    console.error('Error stack:', error.stack);
     // Return defaults instead of error for better UX
     res.json(defaultResponse);
   } finally {
