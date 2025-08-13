@@ -3,7 +3,7 @@ import { env } from '../config/env';
 
 // Configurable CORS. Defaults to permissive in development to preserve current behavior.
 const corsMiddleware = cors({
-  origin: env.CORS_ORIGIN ? env.CORS_ORIGIN.split(',').map((o) => o.trim()) : true,
+  origin: env.CORS_ORIGIN ? env.CORS_ORIGIN.split(',').map((o: string) => o.trim()) : true,
   credentials: true,
 });
 
